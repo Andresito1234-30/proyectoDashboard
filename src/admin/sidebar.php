@@ -4,6 +4,17 @@ $current_page = basename($_SERVER['PHP_SELF']);
 // No session_start ni funciones aquí. Usamos las del header.
 $avatar = normalize_avatar_url($_SESSION['ruta_foto'] ?? null, $_SESSION['google_picture'] ?? null);
 $nombre = current_username();
+
+// Contar ventas para el badge
+require_once __DIR__ . '/../conexionpdo.php';
+require_once __DIR__ . '/../includes/models/Venta.php';
+$totalVentas = 0;
+try {
+    $veModel = new Venta($pdo);
+    $totalVentas = (int)$veModel->contar();
+} catch (Exception $e) {
+    $totalVentas = 0;
+}
 ?>
 <!-- Main Sidebar Container -->
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
@@ -76,7 +87,7 @@ $nombre = current_username();
         <li class="nav-item">
           <a href="#" class="nav-link">
             <i class="nav-icon fas fa-shopping-cart"></i>
-            <p>Ventas<i class="right fas fa-angle-left"></i><span class="badge badge-info right">6</span></p>
+            <p>Ventas<i class="right fas fa-angle-left"></i><span class="badge badge-info right"><?php echo $totalVentas; ?></span></p>
           </a>
           <ul class="nav nav-treeview">
             <li class="nav-item"><a href="/modules/ventas/crear.php" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Nueva Venta</p></a></li>
@@ -92,8 +103,7 @@ $nombre = current_username();
           </a>
           <ul class="nav nav-treeview">
             <li class="nav-item"><a href="/modules/reportes/ventas.php" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Ventas por Período</p></a></li>
-            <li class="nav-item"><a href="/modules/reportes/vendedores.php" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Top Vendedores</p></a></li>
-            <li class="nav-item"><a href="/modules/reportes/productos.php" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Productos Más Vendidos</p></a></li>
+            <li class="nav-item"><a href="/modules/reportes/vendedores.php" class="nav-link"><i class="far fa-circle nav-icon"></i><p>Top Vendedores</p></a></li> 
           </ul>
         </li>
 
@@ -102,6 +112,17 @@ $nombre = current_username();
           <a href="/modules/configuracion/general.php" class="nav-link">
             <i class="nav-icon fas fa-cogs"></i>
             <p>Configuración</p>
+          </a>
+        </li>
+
+        <!-- Portafolio -->
+        <li class="nav-item">
+          <a href="https://andresito1234-30.github.io/portafolioHuarotoMongoDB/" target="_blank" class="nav-link">
+            <i class="nav-icon fas fa-briefcase"></i>
+            <p>
+              Portafolio
+              <i class="fas fa-external-link-alt ml-1" style="font-size: 0.7rem;"></i>
+            </p>
           </a>
         </li>
 

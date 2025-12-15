@@ -1,4 +1,5 @@
 <?php
+if (!class_exists('Venta')) {
 class Venta {
     private $conn;
     private $table = "ventas";
@@ -110,4 +111,5 @@ class Venta {
         $r = $stmt->fetch(PDO::FETCH_ASSOC);
         return (int)$r['total'];
     }
+}
 }

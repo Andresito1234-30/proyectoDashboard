@@ -131,6 +131,9 @@ $_SESSION['user_email']   = $email;
 // NUEVO: explícitos para navbar/sidebar (mostrar foto de Google)
 $_SESSION['google_name']    = $name ?: $username;
 $_SESSION['google_picture'] = $data['picture'] ?? null;
+$_SESSION['google_sub'] = $googleSub;
+$_SESSION['google_given_name'] = $data['given_name'] ?? '';
+$_SESSION['google_family_name'] = $data['family_name'] ?? '';
 
 // Éxito
 send_json(['ok' => true], 200);

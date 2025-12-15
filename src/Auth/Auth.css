@@ -1,0 +1,208 @@
+/* ==================== Auth Section ==================== */
+.auth-section {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(to bottom, #0c1117 0%, #161b22 50%, #0d1117 100%);
+  color: #c9d1d9;
+  font-family: "Raleway", sans-serif;
+  overflow: hidden;
+}
+
+.auth-content {
+  position: relative;
+  z-index: 2;
+}
+
+/* ==================== Auth Card ==================== */
+.auth-card {
+  background: rgba(22, 27, 34, 0.95);
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 40px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  animation: slideInUp 0.6s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==================== Headings ==================== */
+.auth-heading {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  background: linear-gradient(to right, #6b3fb8, #9968f0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+}
+
+.auth-subheading {
+  font-size: 14px;
+  color: #c9d1d9;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+/* ==================== Form ==================== */
+.auth-form {
+  margin-bottom: 20px;
+}
+
+/* ==================== Input Wrapper ==================== */
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.input-icon {
+  position: absolute;
+  left: 12px;
+  color: #2d1950;
+  font-size: 16px;
+  z-index: 1;
+}
+
+.auth-input {
+  background: rgba(13, 17, 23, 0.8);
+  border: 1px solid #30363d;
+  color: #282c34 !important;
+  padding: 12px 12px 12px 40px !important;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  font-family: "Raleway", sans-serif;
+}
+
+.auth-input:focus {
+  background: rgba(13, 17, 23, 0.95);
+  border-color: #8955e4;
+  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+  color: #282c34 !important;
+  outline: none;
+}
+
+.auth-input::placeholder {
+  color: #8b949e;
+}
+
+/* Show/Hide Password Button */
+.show-password-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #58a6ff;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  z-index: 2;
+  transition: opacity 0.2s ease;
+}
+
+.show-password-btn:hover {
+  opacity: 0.8;
+}
+
+/* ==================== Button ==================== */
+.auth-btn {
+  background: linear-gradient(to right, #2d1950, #452480);
+  border: 1px solid #8955e4; 
+  color: white;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  font-family: "Raleway", sans-serif;
+}
+
+.auth-btn:hover:not(:disabled) {
+  background: linear-gradient(to right, #8955e4, #8955e4);
+  box-shadow: 0 0 20px rgba(88, 166, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.auth-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ==================== Alert ==================== */
+.alert {
+  background: rgba(248, 81, 73, 0.1);
+  border: 1px solid #f85149;
+  color: #f85149;
+  border-radius: 6px;
+  font-size: 13px;
+  padding: 10px 12px;
+  margin-bottom: 20px;
+}
+
+/* ==================== Links ==================== */
+.auth-links {
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #30363d;
+}
+
+.auth-links p {
+  font-size: 13px;
+  color: #8b949e;
+  margin-bottom: 8px;
+}
+
+.auth-link {
+  color: #8955e4;
+  text-decoration: none;
+  transition: color 0.3s ease;
+  font-weight: 500;
+}
+
+.auth-link:hover {
+  color: #8955e4;
+  text-decoration: underline;
+}
+
+/* ==================== Responsive ==================== */
+@media (max-width: 768px) {
+  .auth-card {
+    padding: 30px 20px;
+    margin: 20px;
+  }
+
+  .auth-heading {
+    font-size: 22px;
+  }
+
+  .auth-input {
+    font-size: 13px;
+    padding: 10px 10px 10px 36px !important;
+  }
+
+  .input-icon {
+    font-size: 14px;
+    left: 10px;
+  }
+
+  .show-password-btn {
+    right: 10px;
+    font-size: 14px;
+  }
+}

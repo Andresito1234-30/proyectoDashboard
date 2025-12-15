@@ -10,6 +10,51 @@ include 'navbar.php';
 
 include 'sidebar.php';
 
+// Conexión y conteos dinámicos
+require_once __DIR__ . '/../conexionpdo.php';
+require_once __DIR__ . '/../includes/models/Vendedor.php';
+require_once __DIR__ . '/../includes/models/Venta.php';
+
+$vendedorCount = 0;
+$ventaCount = 0;
+$calendarEvents = [];
+try {
+    $vModel = new Vendedor($pdo);
+    $vendedorCount = (int)$vModel->contar();
+
+    $veModel = new Venta($pdo);
+    $ventaCount = (int)$veModel->contar();
+
+    // Preparar eventos para el calendario: ventas por fecha
+    $stmt = $pdo->prepare("SELECT DATE(fecha) AS d, COUNT(*) AS cnt FROM ventas GROUP BY DATE(fecha) ORDER BY DATE(fecha) DESC");
+    $stmt->execute();
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($rows as $r) {
+        if (!empty($r['d'])) {
+            $calendarEvents[] = [
+                'title' => (int)$r['cnt'] . ' ventas',
+                'start' => $r['d']
+            ];
+        }
+    }
+
+    // Obtener top 10 vendedores por número de ventas
+    $stmtChart = $pdo->prepare("
+        SELECT ven.vendedor, COUNT(v.id_venta) as total_ventas
+        FROM vendedor ven
+        LEFT JOIN ventas v ON v.id_vendedor = ven.id
+        GROUP BY ven.id, ven.vendedor
+        ORDER BY total_ventas DESC
+        LIMIT 10
+    ");
+    $stmtChart->execute();
+    $vendedoresChart = $stmtChart->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    // En caso de error con la BD, dejamos los valores por defecto (0)
+    $vendedorCount = $vendedorCount ?: 0;
+    $ventaCount = $ventaCount ?: 0;
+}
+
 ?>
 
 
@@ -68,7 +113,7 @@ include 'sidebar.php';
 
                         <div class="inner">
 
-                            <h3>150</h3>
+                            <h3><?php echo (int)$vendedorCount; ?></h3>
 
                             <p>Total Vendedores</p>
 
@@ -100,9 +145,9 @@ include 'sidebar.php';
 
                         <div class="inner">
 
-                            <h3>53<sup style="font-size: 20px">%</sup></h3>
+                            <h3><?php echo (int)$ventaCount; ?></h3>
 
-                            <p>Ventas del Mes</p>
+                            <p>Total Ventas</p>
 
                         </div>
 
@@ -132,7 +177,7 @@ include 'sidebar.php';
 
                         <div class="inner">
 
-                            <h3>44</h3>
+                            <h3><?php echo (int)$vendedorCount; ?></h3>
 
                             <p>Vendedores Activos</p>
 
@@ -248,27 +293,31 @@ include 'sidebar.php';
 
                     <!-- Calendar -->
 
-                    <div class="card bg-gradient-success">
+                    <div class="card card-primary card-outline">
 
-                        <div class="card-header border-0">
+                        <div class="card-header">
 
                             <h3 class="card-title">
 
-                                <i class="far fa-calendar-alt"></i>
+                                <i class="far fa-calendar-alt mr-1"></i>
 
-                                Calendario
+                                Calendario de Ventas
 
                             </h3>
+
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
 
                         </div>
 
                         <!-- /.card-header -->
 
-                        <div class="card-body pt-0">
+                        <div class="card-body p-3">
 
-                            <!--The calendar -->
-
-                            <div id="calendar" style="width: 100%"></div>
+                            <div id="calendar"></div>
 
                         </div>
 
@@ -302,72 +351,147 @@ include 'sidebar.php';
 
 <script>
 
-// Gráfico de ventas
-
+// Gráfico de ventas por vendedor (dinámico desde BD)
 var ctx = document.getElementById('ventasChart').getContext('2d');
-
 var ventasChart = new Chart(ctx, {
-
     type: 'bar',
-
     data: {
-
-        labels: ['Juan Pérez', 'María García', 'Carlos López', 'Ana Martínez', 'Pedro Sánchez'],
-
+        labels: [<?php 
+            echo implode(',', array_map(function($v) { 
+                return '"' . htmlspecialchars($v['vendedor'], ENT_QUOTES) . '"'; 
+            }, $vendedoresChart ?? [])); 
+        ?>],
         datasets: [{
-
-            label: 'Ventas del Mes',
-
-            data: [12, 19, 3, 5, 2],
-
+            label: 'Número de Ventas',
+            data: [<?php 
+                echo implode(',', array_map(function($v) { 
+                    return (int)$v['total_ventas']; 
+                }, $vendedoresChart ?? [])); 
+            ?>],
             backgroundColor: [
-
                 'rgba(255, 99, 132, 0.2)',
-
                 'rgba(54, 162, 235, 0.2)',
-
                 'rgba(255, 206, 86, 0.2)',
-
                 'rgba(75, 192, 192, 0.2)',
-
-                'rgba(153, 102, 255, 0.2)'
-
+                'rgba(153, 102, 255, 0.2)',
+                'rgba(255, 159, 64, 0.2)',
+                'rgba(199, 199, 199, 0.2)',
+                'rgba(83, 102, 255, 0.2)',
+                'rgba(255, 99, 255, 0.2)',
+                'rgba(99, 255, 132, 0.2)'
             ],
-
             borderColor: [
-
                 'rgba(255, 99, 132, 1)',
-
                 'rgba(54, 162, 235, 1)',
-
                 'rgba(255, 206, 86, 1)',
-
                 'rgba(75, 192, 192, 1)',
-
-                'rgba(153, 102, 255, 1)'
-
+                'rgba(153, 102, 255, 1)',
+                'rgba(255, 159, 64, 1)',
+                'rgba(199, 199, 199, 1)',
+                'rgba(83, 102, 255, 1)',
+                'rgba(255, 99, 255, 1)',
+                'rgba(99, 255, 132, 1)'
             ],
-
             borderWidth: 1
-
         }]
-
     },
-
     options: {
-
+        responsive: true,
+        maintainAspectRatio: false,
         scales: {
-
             y: {
-
-                beginAtZero: true
-
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
             }
-
+        },
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return context.parsed.y + ' ventas';
+                    }
+                }
+            }
         }
-
     }
-
 });
 
 </script>
+
+<!-- FullCalendar CSS/JS -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales-all.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    if (!calendarEl) return;
+
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'es',
+        height: 'auto',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,listMonth'
+        },
+        buttonText: {
+            today: 'Hoy',
+            month: 'Mes',
+            list: 'Lista'
+        },
+        eventClassNames: 'bg-info',
+        eventDisplay: 'block',
+        displayEventTime: false,
+        eventColor: '#17a2b8',
+        eventTextColor: '#ffffff',
+        dayCellClassNames: 'calendar-day',
+        events: <?php echo json_encode($calendarEvents, JSON_UNESCAPED_UNICODE); ?>,
+        eventClick: function(info) {
+            alert('Fecha: ' + info.event.start.toLocaleDateString('es-ES') + '\n' + info.event.title);
+        },
+        eventMouseEnter: function(info) {
+            info.el.style.cursor = 'pointer';
+        }
+    });
+
+    calendar.render();
+});
+</script>
+
+<style>
+/* Custom calendar styles */
+#calendar {
+    font-size: 0.9rem;
+}
+#calendar .fc-daygrid-day-number {
+    padding: 5px;
+    font-size: 0.85rem;
+}
+#calendar .fc-event {
+    border-radius: 3px;
+    padding: 2px 5px;
+    margin-bottom: 2px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+#calendar .fc-toolbar-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+#calendar .fc-button {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.85rem;
+}
+#calendar .fc-day-today {
+    background-color: rgba(23, 162, 184, 0.1) !important;
+}
+</style>

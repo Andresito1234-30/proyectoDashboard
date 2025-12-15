@@ -6,104 +6,19 @@ session_start();
 // (Opcional) depuración
 // ini_set('display_errors', 1); error_reporting(E_ALL);
 
+// Mensajes mostrados en la UI (se usarán para errores devueltos por los proxies)
 $mensaje_login = '';
 $mensaje_reg   = '';
 
-// SI YA ESTÁ LOGUEADO, ENTRA AL DASHBOARD (CAMBIADO a admin/index.php)
+// Detectar si la sesión expiró
+if (isset($_GET['session_expired']) && $_GET['session_expired'] == '1') {
+  $mensaje_login = '⏳ Tu sesión ha expirado por seguridad. Por favor inicia sesión nuevamente.';
+}
+
+// SI YA ESTÁ LOGUEADO, ENTRA AL DASHBOARD
 if (!empty($_SESSION['user_id'])) {
   header('Location: /admin/index.php');
   exit;
-}
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $tipo = $_POST['form_type'] ?? '';
-
-    // LOGIN
-    if ($tipo === 'login') {
-        $username = trim($_POST['username'] ?? '');
-        $password = $_POST['password'] ?? '';
-
-        if ($username === '' || $password === '') {
-            $mensaje_login = 'Usuario y contraseña son obligatorios.';
-        } else {
-            $stmt = $pdo->prepare('SELECT id, username, password, ruta_foto FROM users WHERE username = ?');
-            $stmt->execute([$username]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($user && password_verify($password, $user['password'])) {
-                $_SESSION['user_id']   = $user['id'];
-                $_SESSION['username']  = $user['username'];
-                $_SESSION['ruta_foto'] = $user['ruta_foto'] ?? null;
-
-                // REDIRECCIÓN CAMBIADA a admin/index.php
-                header('Location: /admin/index.php');
-                exit;
-            } else {
-                $mensaje_login = 'Usuario o contraseña incorrectos.';
-            }
-        }
-    }
-
-    // REGISTRO
-    if ($tipo === 'register') {
-        $username     = trim($_POST['username'] ?? '');
-        $passwordPlan = $_POST['password'] ?? '';
-
-        if ($username === '' || $passwordPlan === '') {
-            $mensaje_reg = 'Usuario y contraseña son obligatorios.';
-        } elseif (!isset($_FILES['foto']) || $_FILES['foto']['error'] !== UPLOAD_ERR_OK) {
-            $mensaje_reg = 'Debes seleccionar una imagen válida.';
-        } else {
-            $file   = $_FILES['foto'];
-            $maxSz  = 2 * 1024 * 1024;
-            if ($file['size'] > $maxSz) {
-                $mensaje_reg = 'La imagen excede el tamaño máximo (2 MB).';
-            } else {
-                $finfo = new finfo(FILEINFO_MIME_TYPE);
-                $mime  = $finfo->file($file['tmp_name']);
-                $ext   = match ($mime) {
-                    'image/jpeg' => 'jpg',
-                    'image/png'  => 'png',
-                    'image/webp' => 'webp',
-                    default      => null
-                };
-                if (!$ext) {
-                    $mensaje_reg = 'Formato no permitido. Usa JPG, PNG o WEBP.';
-                } else {
-                    // uploads en el DocumentRoot (/uploads)
-                    $uploadsDirAbs = rtrim($_SERVER['DOCUMENT_ROOT'], '/\\') . '/uploads';
-                    if (!is_dir($uploadsDirAbs)) {
-                        @mkdir($uploadsDirAbs, 0775, true);
-                    }
-
-                    $safeUser  = preg_replace('/\W+/', '_', strtolower($username));
-                    $fileName  = sprintf('%s_%s.%s', $safeUser, bin2hex(random_bytes(6)), $ext);
-
-                    $destAbs   = $uploadsDirAbs . '/' . $fileName;
-                    $destRel   = '/uploads/' . $fileName;
-
-                    if (!move_uploaded_file($file['tmp_name'], $destAbs)) {
-                        $mensaje_reg = 'No se pudo guardar la imagen en el servidor.';
-                    } else {
-                        @chmod($destAbs, 0644);
-                        $hash = password_hash($passwordPlan, PASSWORD_BCRYPT);
-
-                        $stmt = $pdo->prepare('INSERT INTO users (username, password, ruta_foto) VALUES (?, ?, ?)');
-                        try {
-                            $ok = $stmt->execute([$username, $hash, $destRel]);
-                            if ($ok) {
-                                $mensaje_login = 'Registro exitoso. Ahora puedes iniciar sesión.';
-                            } else {
-                                $mensaje_reg = 'Error al registrar usuario.';
-                            }
-                        } catch (PDOException $e) {
-                            $mensaje_reg = 'Error de base de datos: ' . htmlspecialchars($e->getMessage());
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
 
 // Tu Client ID (GIS). No uses el client secret en el front.
@@ -116,8 +31,14 @@ $GOOGLE_CLIENT_ID = '43219663738-4a1q985vnjmfr87back9i52v7fjbk2lt.apps.googleuse
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sign In/Up Form</title>
 
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/assets/img/favicon.png">
+
   <!-- CSS de esta pantalla -->
   <link rel="stylesheet" href="../assets/css/login_registrarse.css"/>
+
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" />
 
   <!-- Google Identity Services (GIS) -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -125,6 +46,10 @@ $GOOGLE_CLIENT_ID = '43219663738-4a1q985vnjmfr87back9i52v7fjbk2lt.apps.googleuse
   <style>
     .divider { margin: 12px 0; font-size: 12px; color: #64748b; }
     .google-btn-wrap { display:flex; justify-content:center; margin-top:6px; }
+    .input-group { position: relative; margin-bottom: 10px; }
+    .input-group i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; }
+    .input-group input { padding-left: 38px; width: 100%; }
+    .input-group input[type="file"] { padding-left: 10px; }
   </style>
 </head>
 <body>
@@ -133,33 +58,56 @@ $GOOGLE_CLIENT_ID = '43219663738-4a1q985vnjmfr87back9i52v7fjbk2lt.apps.googleuse
   <div class="container <?= ($mensaje_reg) ? 'right-panel-active' : '' ?>" id="container">
     <!-- REGISTRO -->
     <div class="form-container sign-up-container">
-      <form method="POST" enctype="multipart/form-data">
+      <form id="register-form" enctype="multipart/form-data" novalidate>
         <h2>Crear una cuenta</h2>
+        <div id="register-alert"></div>
         <?php if ($mensaje_reg): ?>
           <p style="color:#ff1744; font-weight:bold;"><?= htmlspecialchars($mensaje_reg) ?></p>
         <?php else: ?>
           <span>Crea tu cuenta para acceder</span>
         <?php endif; ?>
-        <input type="hidden" name="form_type" value="register"/>
-        <input type="text" name="username" placeholder="Username" required />
-        <input type="password" name="password" placeholder="Password" required />
-        <input type="file" name="foto" accept="image/jpeg,image/png,image/webp" required />
+        <div class="input-group">
+          <i class="fas fa-user"></i>
+          <input type="text" name="firstname" placeholder="Nombre" required />
+        </div>
+        <div class="input-group">
+          <i class="fas fa-user"></i>
+          <input type="text" name="lastname" placeholder="Apellido" required />
+        </div>
+        <div class="input-group">
+          <i class="fas fa-envelope"></i>
+          <input type="email" name="email" placeholder="Correo electrónico" required />
+        </div>
+        <div class="input-group">
+          <i class="fas fa-lock"></i>
+          <input type="password" name="password" placeholder="Contraseña" required />
+        </div>
+        <div class="input-group">
+          <i class="fas fa-lock"></i>
+          <input type="password" name="confirmPassword" placeholder="Confirmar contraseña" required />
+        </div>
         <button type="submit">Sign Up</button>
       </form>
     </div>
 
     <!-- LOGIN -->
     <div class="form-container sign-in-container">
-      <form method="POST">
+      <form id="login-form">
         <h2>Iniciar sesión</h2>
+        <div id="login-alert"></div>
         <?php if ($mensaje_login): ?>
           <p style="color:#ff1744; font-weight:bold;"><?= htmlspecialchars($mensaje_login) ?></p>
         <?php else: ?>
           <span>Use su cuenta ya registrada</span>
         <?php endif; ?>
-        <input type="hidden" name="form_type" value="login"/>
-        <input type="text" name="username" placeholder="Username" required />
-        <input type="password" name="password" placeholder="Password" required />
+        <div class="input-group">
+          <i class="fas fa-envelope"></i>
+          <input type="email" name="email" id="login-email" placeholder="Correo electrónico" required />
+        </div>
+        <div class="input-group">
+          <i class="fas fa-lock"></i>
+          <input type="password" name="password" id="login-password" placeholder="Contraseña" required />
+        </div>
         <button type="submit">Sign In</button>
 
         <!-- Separador + Botón de Google (GIS) -->
@@ -188,6 +136,8 @@ $GOOGLE_CLIENT_ID = '43219663738-4a1q985vnjmfr87back9i52v7fjbk2lt.apps.googleuse
       </form>
     </div>
 
+    
+
     <!-- OVERLAY -->
     <div class="overlay-container">
       <div class="overlay">
@@ -207,6 +157,9 @@ $GOOGLE_CLIENT_ID = '43219663738-4a1q985vnjmfr87back9i52v7fjbk2lt.apps.googleuse
 
   <script src="../assets/js/login_registrarse.js" defer></script>
 
+  <!-- Auth handler using modular services/api.js -->
+  <script type="module" src="../assets/js/auth_handler.js"></script>
+
   <!-- Callback GIS: tras ok => redirige a /admin/index.php -->
   <script>
     async function handleCredentialResponse(response) {
@@ -222,7 +175,6 @@ $GOOGLE_CLIENT_ID = '43219663738-4a1q985vnjmfr87back9i52v7fjbk2lt.apps.googleuse
           body: 'id_token=' + encodeURIComponent(id_token)
         });
 
-        // Lee como texto primero para poder mostrar errores del servidor
         const raw = await r.text();
         let data;
         try {
@@ -234,7 +186,6 @@ $GOOGLE_CLIENT_ID = '43219663738-4a1q985vnjmfr87back9i52v7fjbk2lt.apps.googleuse
         }
 
         if (!r.ok) {
-          // Si el HTTP es 4xx/5xx, muestra el error que vino
           alert(data.error || ('Error HTTP ' + r.status));
           return;
         }

@@ -7,6 +7,10 @@ session_start();
 $page_title = "Perfil de Usuario";
 
 // --------- Resolver datos del usuario desde la sesión ----------
+$firstname = $_SESSION['firstname'] ?? '';
+$lastname  = $_SESSION['lastname'] ?? '';
+
+
 $authType   = $_SESSION['auth_type']  ?? 'local';        // 'google' | 'local'
 $username   = $_SESSION['username']   ?? 'Usuario';
 $email      = $_SESSION['user_email'] ?? '';
@@ -24,16 +28,24 @@ if ($authType === 'google' && $gPicture) {
   // Normaliza a ruta absoluta web (/uploads/xxx) y verifica que exista
   $rel = (strpos($rutaFoto, '/') === 0) ? $rutaFoto : '/' . ltrim($rutaFoto, '/');
   $abs = rtrim($_SERVER['DOCUMENT_ROOT'] ?? '', '/\\') . $rel;
-  $avatarUrl = (is_file($abs)) ? $rel : '/assets/img/user-avatar.jpg';
+  $avatarUrl = (is_file($abs)) ? $rel : '/assets/img/user-avatar.png';
 } else {
-  $avatarUrl = '/assets/img/user-avatar.jpg';
+  $avatarUrl = '/assets/img/user-avatar.png';
 }
 
-// Nombre “bonito” cuando viene de Google
+// Nombre "bonito" basado en el tipo de autenticación
 $fullName = $username;
-if ($authType === 'google' && ($gGiven || $gFamily)) {
-  $fullName = trim($gGiven . ' ' . $gFamily) ?: $username;
+
+// MongoDB
+if ($authType === 'local_mongo' && ($firstname || $lastname)) {
+  $fullName = trim($firstname . ' ' . $lastname);
 }
+
+// Google
+if ($authType === 'google' && ($gGiven || $gFamily)) {
+  $fullName = trim($gGiven . ' ' . $gFamily);
+}
+
 
 // ------------- Layout estándar AdminLTE -------------
 include 'header.php';

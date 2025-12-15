@@ -64,7 +64,7 @@ $nombre = current_username();
         <a href="/admin/profile.php" class="dropdown-item">
           <i class="fas fa-user mr-2"></i> Mi Perfil
         </a>
-        <a href="/admin/settings.php" class="dropdown-item">
+        <a href="/modules/configuracion/general.php" class="dropdown-item">
           <i class="fas fa-cog mr-2"></i> Configuración
         </a>
         <div class="dropdown-divider"></div>

@@ -135,7 +135,7 @@ if(isset($_GET['id'])) {
 
                                     <div class="user-profile mb-4">
 
-                                        <img src="../../assets/img/user-avatar.jpg" 
+                                        <img src="/assets/img/user-avatar.jpg" 
 
                                              class="img-circle elevation-2" 
 

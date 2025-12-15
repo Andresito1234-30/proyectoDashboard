@@ -1,0 +1,16 @@
+# .htaccess for project root redirect
+# Redirect /admin/ to /src/admin/
+# Redirect /index.php to /src/index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Redirect /admin/ to actual location /src/admin/
+    RewriteRule ^admin/(.*)$ /src/admin/$1 [L]
+    
+    # Redirect root index.php to src/index.php
+    RewriteRule ^index\.php$ /src/index.php [L]
+    
+    # Redirect root to src/index.php by default
+    RewriteRule ^$ /src/index.php [L]
+</IfModule>
